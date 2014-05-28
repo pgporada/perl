@@ -32,3 +32,9 @@ print @$_, "\n" foreach ( @shiftAoA );
 print "\nUnshift - We add  a value back to the START (beginning) of the shift'd array\n";
 unshift @{$shiftAoA[0]},9;
 print @$_, "\n" foreach ( @shiftAoA );
+
+print "\nSplice - testing to replace a value in the middle of a 2D array (AoA)\n";
+my @spliceAoA = map { [@$_] } @originalAoA;
+splice @{$spliceAoA[0]},1,1,'9';
+splice @{$spliceAoA[1]},2,1,'Q';
+print @$_, "\n" foreach ( @spliceAoA );
