@@ -27,8 +27,8 @@ my @MapLoc = (0,0,0,0);
 my @MapAoA = ( [0,0,1,0,0,1,0,0], #[0] array.
 	       [1,0,2,0,1,1,0,0], #[1] array..
 	       [2,0,0,0,1,1,0,0], #[2] array...
-	       [3,0,1,0,1,1,0,0], #[3] etc
-	       [4,0,1,0,1,0,1,0], #[4] etc.
+	       [3,0,0,0,1,1,0,0], #[3] etc
+	       [4,0,0,0,1,0,1,0], #[4] etc.
 	       [0,1,0,0,0,0,0,0], #[5] etc..
 	       [1,1,2,0,0,0,0,0], #[6] etc...
 	       [2,1,0,0,0,1,1,0], #[7]
@@ -59,7 +59,10 @@ sub CHECK_MAP {
     for(my $i=0; $i <= 4; $i++) {
         for(my $j=0; $j <= 4; $j++) {
 	    # Prints your current position out from the @MapLoc array
-            if ($MapLoc[0] == $j && $MapLoc[1] == $i) { print "[$cur_position]"; }
+            if ($MapLoc[0] == $j && $MapLoc[1] == $i) { 
+	        print "[$cur_position]";
+		if (@{$MapAoA[$innerCount]}->[2] == 0) { splice @{$MapAoA[$innerCount]},2,1,1; }
+	    }
 	    elsif (@{$MapAoA[$innerCount]}->[2] == 3 && $is_shop == 1) { print "[$shop]"; }
             elsif (@{$MapAoA[$innerCount]}->[2] == 2) { print "[$impasse]"; }
             elsif (@{$MapAoA[$innerCount]}->[2] == 1) { print "[$revealed]"; }
@@ -132,6 +135,7 @@ sub TRAVEL_DIR {
     elsif ($input =~ 'W') {
         print "You travelled West\n";
 	$count_EW -= 1;
+
 	if ($MapLoc[0] <= 0) {
 	    splice @MapLoc,0,1,0;
 	    $count_EW += 1;
@@ -145,9 +149,7 @@ sub TRAVEL_DIR {
 	    splice @MapLoc,0,1,$count_EW; # Current
 	}
     }
-        
-	my $distance = ($MapLoc[2] + $MapLoc[3] + (($MapLoc[2] * $MapLoc[3]) + $#{$MapAoA[0]}+1));
-	splice @{$MapAoA[$distance]},2,1,1;
+
 }
 
 sub main {
