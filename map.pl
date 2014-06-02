@@ -12,7 +12,7 @@ my $impasse = fg($user_color_choice,'#');
 my $shop = fg('yellow9','$');
 my $count_NS = 0;
 my $count_EW = 0;
-my $is_shop = 1;
+my $is_shop = 0;
 my $has_bomb = 0;
 my $impasse01_cleared = 0;
 my $impasse11_cleared = 0;
@@ -61,7 +61,13 @@ sub CHECK_MAP {
 	    # Prints your current position out from the @MapLoc array
             if ($MapLoc[0] == $j && $MapLoc[1] == $i) { 
 	        print "[$cur_position]";
+		# Changes the current positions state to "1" to reveal it
+		# Upon traveling, the CHECK_MAP function is called so this will update your map correctly
 		if (@{$MapAoA[$innerCount]}->[2] == 0) { splice @{$MapAoA[$innerCount]},2,1,1; }
+		# This allows the shop to be revealed, by default it is hidden. Basically it checks 
+		# if the state is set to 3 then updates the $is_shop global var accordingly. 
+		# Probably not the smartest way, but eh it works so hey!
+		if (@{$MapAoA[$innerCount]}->[2] == 3) { $is_shop = 1; }
 	    }
 	    elsif (@{$MapAoA[$innerCount]}->[2] == 3 && $is_shop == 1) { print "[$shop]"; }
             elsif (@{$MapAoA[$innerCount]}->[2] == 2) { print "[$impasse]"; }
