@@ -61,11 +61,17 @@ sub CHECK_MAP {
 	    # Prints your current position out from the @MapLoc array
             if ($MapLoc[0] == $j && $MapLoc[1] == $i) { 
 	        print "[$cur_position]";
+		
 		# Changes the current positions state to "1" to reveal it
 		# Upon traveling, the CHECK_MAP function is called so this will update your map correctly
 		if (@{$MapAoA[$innerCount]}->[2] == 0) { splice @{$MapAoA[$innerCount]},2,1,1; }
+
+		# If you destroy the walls then the map should be updated accordingly
+		if ($impasse01_cleared == 1 && @{$MapAoA[1]}->[2] != 1) { splice @{$MapAoA[1]},2,1,0; }
+		if ($impasse11_cleared == 1 && @{$MapAoA[6]}->[2] != 1) { splice @{$MapAoA[6]},2,1,0; }
+		
 		# This allows the shop to be revealed, by default it is hidden. Basically it checks 
-		# if the state is set to 3 then updates the $is_shop global var accordingly. 
+		# if the state is set to 3 then updates the is_shop global var accordingly. 
 		# Probably not the smartest way, but eh it works so hey!
 		if (@{$MapAoA[$innerCount]}->[2] == 3) { $is_shop = 1; }
 	    }
@@ -155,7 +161,18 @@ sub TRAVEL_DIR {
 	    splice @MapLoc,0,1,$count_EW; # Current
 	}
     }
+}
 
+sub DO_STUFF {
+   
+   if ($MapLoc[0] == 2 && $MapLoc[1] == 0 && $impasse01_cleared == 0) {
+      print "You see a crack in the wall. As you investigate you realize you have a bomb to deal with this certain thing!\n";
+      print "Use bomb? [Yy]\n=>";
+      my $input = uc(<STDIN>);
+      chomp($input);
+      $impasse01_cleared = 1;
+      CHECK_MAP();
+   }
 }
 
 sub main {
@@ -163,7 +180,7 @@ sub main {
        system("clear");
 
        # Debug data structure stuff
-       # print @$_, "\n" foreach ( @MapAoA );
+       print @$_, "\n" foreach ( @MapAoA );
        print "0123\n";
        print "XYXY\n";
        print "CCPP\n";
@@ -171,6 +188,7 @@ sub main {
        print "\n";
        CHECK_MAP();
        TRAVEL_DIR();
+       DO_STUFF();
     }
 }
 
