@@ -1,74 +1,73 @@
 #!/usr/bin/env perl
 use warnings;
 use strict;
-use Term::ANSIColor qw(:constants);
+#use Term::ANSIColor qw(:constants);
+use Term::ExtendedColor qw(:all);
 
+my $user_color_choice = "sandybrown";
 my $cur_position = 'X';
-my $undiscovered = '-';
-my $revealed = 'o';
-my $impasse = '#';
-my $count_N = 0;
-my $count_S = 0;
-my $count_E = 0;
-my $count_W = 0;
+my $undiscovered = ' ';
+my $revealed = fg('blue3','-');
+my $impasse = fg($user_color_choice,'#');
+my $shop = fg('yellow9','$');
+my $count_NS = 0;
+my $count_EW = 0;
+my $is_shop = 1;
+my $has_bomb = 0;
+my $impasse01_cleared = 0;
+my $impasse11_cleared = 0;
 
 system("clear"); 
 
-# data structure: Y[0], X[1], has_been_revealed?[2], boss[3], exit N[4], exit S[5], exit E[6], exit W[7]
-my @MapAoA = ( [0,0,0,0,], #This first array  is current Y[0], current X[1], previous Y[2], previous X[3]
-	       [0,0,1,0,0,1,0,0], #[1] array.
-	       [1,0,0,0,1,1,0,0], #[2] array..
-	       [2,0,0,0,1,1,0,0], #[3] array...
-	       [3,0,0,0,1,1,0,0], #[4] etc
-	       [4,0,0,0,1,0,1,0], #[5] etc.
-	       [0,1,0,0,0,0,0,0], #[6] etc..
-	       [1,1,0,0,0,0,0,0], #[7] etc...
-	       [2,1,0,0,0,1,1,0], #[8]
-	       [3,1,0,0,1,1,0,0], #[9]
-	       [4,1,0,0,1,0,0,1], #[10]
-	       [0,2,0,0,0,1,1,0], #[11]
-	       [1,2,0,0,1,0,1,0], #[12]
-	       [2,2,0,0,0,0,1,1], #[13]
-	       [3,2,0,0,0,1,0,0], #[14]
-	       [4,2,0,0,1,0,1,0], #[15]
-	       [0,3,0,0,0,0,1,1], #[16]
-	       [1,3,0,0,0,1,0,1], #[17]
-	       [2,3,0,0,1,1,0,1], #[18]
-	       [3,3,0,0,1,1,0,0], #[19]
-	       [4,3,0,0,1,0,0,1], #[20]
-	       [0,4,0,0,0,1,0,1], #[21]
-	       [1,4,0,0,1,1,0,0], #[22]
-	       [2,4,0,1,0,1,0,0], #[23]
-	       [3,4,0,0,0,1,0,0], #[24]
-	       [4,4,0,0,0,0,0,0]  #[25]
+#Location on the grid = current X[0], current Y[1], previous X[2], previous Y[3]
+my @MapLoc = (0,0,0,0);
+
+# data structure: X[0], Y[1], state[2], boss[3], exit N[4], exit S[5], exit E[6], exit W[7]
+#states will be 0=undiscovered,1=discovered,2=impasse,3=shop
+my @MapAoA = ( [0,0,1,0,0,1,0,0], #[0] array.
+	       [1,0,2,0,1,1,0,0], #[1] array..
+	       [2,0,0,0,1,1,0,0], #[2] array...
+	       [3,0,1,0,1,1,0,0], #[3] etc
+	       [4,0,1,0,1,0,1,0], #[4] etc.
+	       [0,1,0,0,0,0,0,0], #[5] etc..
+	       [1,1,2,0,0,0,0,0], #[6] etc...
+	       [2,1,0,0,0,1,1,0], #[7]
+	       [3,1,0,0,1,1,0,0], #[8]
+	       [4,1,0,0,1,0,0,1], #[9]
+	       [0,2,0,0,0,1,1,0], #[10]
+	       [1,2,0,0,1,0,1,0], #[11]
+	       [2,2,0,0,0,0,1,1], #[12]
+	       [3,2,0,0,0,1,0,0], #[13]
+	       [4,2,0,0,1,0,1,0], #[14]
+	       [0,3,0,0,0,0,1,1], #[15]
+	       [1,3,0,0,0,1,0,1], #[16]
+	       [2,3,3,0,1,1,0,1], #[17]
+	       [3,3,0,0,1,1,0,0], #[18]
+	       [4,3,0,0,1,0,0,1], #[19]
+	       [0,4,0,0,0,1,0,1], #[20]
+	       [1,4,0,0,1,1,0,0], #[21]
+	       [2,4,0,1,0,1,0,0], #[22]
+	       [3,4,0,0,0,1,0,0], #[23]
+	       [4,4,0,0,0,0,0,0]  #[24]
 	     );
 
 sub CHECK_MAP {
+    # Inner/Outer exist so that I can get 0-24 for X,Y to access the correct array and check if the 
+    # current spot has been revealed. Without these, the entire row or column would be marked as revealed
+    my $innerCount = 0;
+    my $outerCount = 0;
     for(my $i=0; $i <= 4; $i++) {
         for(my $j=0; $j <= 4; $j++) {
-            if ($MapAoA[0]->[0] == $i && $MapAoA[0]->[1] == $j) { 
-	        print "[$cur_position]"; 
-		
-		# Sets the previous location
-		#splice @{$MapAoA[0]},2,0,@{$MapAoA[0]}->[0];
-		#splice @{$MapAoA[0]},3,0,@{$MapAoA[0]}->[1];
-		push @{$MapAoA[0]},@{$MapAoA[0]}->[0];
-		shift @{$MapAoA[0]};
-		push @{$MapAoA[0]},@{$MapAoA[0]}->[1];
-		shift @{$MapAoA[0]};
-		
-		# Sets the current y and current x location based on the $i and $j value
-		#splice @{$MapAoA[0]},0,0,$i;
-		#splice @{$MapAoA[0]},1,0,$j;
-		push @{$MapAoA[0]},$i;
-		shift @{$MapAoA[0]};
-		push @{$MapAoA[0]},$j;
-		shift @{$MapAoA[0]};
-            }
-            elsif (@{$MapAoA[$j]} == 1 && $MapAoA[0]->[0] != $i && $MapAoA[0]->[1] != $j) { print "[$revealed]"; }
-            else { print "[$undiscovered]"; }
+	    # Prints your current position out from the @MapLoc array
+            if ($MapLoc[0] == $j && $MapLoc[1] == $i) { print "[$cur_position]"; }
+	    elsif (@{$MapAoA[$innerCount]}->[2] == 3 && $is_shop == 1) { print "[$shop]"; }
+            elsif (@{$MapAoA[$innerCount]}->[2] == 2) { print "[$impasse]"; }
+            elsif (@{$MapAoA[$innerCount]}->[2] == 1) { print "[$revealed]"; }
+	    else { print "[$undiscovered]"; }
+	    $innerCount+=1;
             }
         print "\n";
+	$outerCount+=1;
     }
 }
 
@@ -78,45 +77,92 @@ sub TRAVEL_DIR {
     my $input = uc(<STDIN>);
     chomp($input);
 
+    # @MapLock is (X,Y,X,Y) current X[0], current Y[1], previous X[2], previous Y[3]
     if ($input =~ 'N') { 
         print "You travelled North\n";
-        
-	$count_N+=1;
+	$count_NS -= 1;
+	if ($MapLoc[1] <= 0) { 
+	    splice @MapLoc,1,1,0;
+	    $count_NS += 1;
+	}
+	elsif (@{$MapAoA[2]} == 2) {
+	    splice @MapLoc,1,1,$count_NS;
+	    $count_NS += 1;
+	}
+	else {
+	    splice @MapLoc,3,1,$count_NS+1; # Previous
+	    splice @MapLoc,1,1,$count_NS; #Current
+	}
     }
+
     elsif ($input =~ 'S') { 
         print "You travelled South\n";
-	$count_S+=1;
-	push @{$MapAoA[0]},$count_S;
-	shift @{$MapAoA[0]};
+	$count_NS += 1;
+	if ($MapLoc[1] >= 4) {
+	    splice @MapLoc,1,1,4;
+	    $count_NS -= 1;
+	}
+	elsif (@{$MapAoA[2]} == 2) { 
+	    splice @MapLoc,1,1,$count_NS;
+	    $count_NS -= 1;
+	}
+	else {
+	    splice @MapLoc,3,1,$count_NS-1; # Previous
+	    splice @MapLoc,1,1,$count_NS; # Current
+	}
     }
+
     elsif ($input =~ 'E') {
         print "You travelled East\n";
-
-	$count_E+=1;
+	$count_EW += 1;
+	if ($MapLoc[0] >= 4 && @{$MapAoA[2]} != 2) {
+	    splice @MapLoc,0,1,4;
+	    $count_EW -= 1;
+	}
+	elsif (@{$MapAoA[2]} == 2) {
+	    splice @MapLoc,0,1,$MapLoc[2];
+	    $count_EW -= 1;
+	}
+	else {
+	    splice @MapLoc,2,1,$count_EW-1; # Previous 
+	    splice @MapLoc,0,1,$count_EW; # Current
+	}
     }
+
     elsif ($input =~ 'W') {
         print "You travelled West\n";
-
-	$count_W+=1;
+	$count_EW -= 1;
+	if ($MapLoc[0] <= 0) {
+	    splice @MapLoc,0,1,0;
+	    $count_EW += 1;
+	}
+	elsif (@{$MapAoA[2]} == 2) {
+	    $count_EW += 1;
+	    splice @MapLoc,0,1,$count_EW;
+	}
+	else {
+	    splice @MapLoc,2,1,$count_EW+1; # Previous
+	    splice @MapLoc,0,1,$count_EW; # Current
+	}
     }
-    else { TRAVEL_DIR(); }
+        
+	my $distance = ($MapLoc[2] + $MapLoc[3] + (($MapLoc[2] * $MapLoc[3]) + $#{$MapAoA[0]}+1));
+	splice @{$MapAoA[$distance]},2,1,1;
 }
-
 
 sub main {
     while(1) {
-        system("clear");
-#	for my $i ( 0 .. $#MapAoA ) {
-#	      for my $j ( 0 .. $#{ $MapAoA[$i] } ) {
-#	          print $MapAoA[$i][$j];
-#	      }
-#	      print "\n";
-#	}
+       system("clear");
 
-        print @$_, "\n" foreach ( @MapAoA );
-        print "\n";
-        CHECK_MAP();
-	TRAVEL_DIR();
+       # Debug data structure stuff
+       # print @$_, "\n" foreach ( @MapAoA );
+       print "0123\n";
+       print "XYXY\n";
+       print "CCPP\n";
+       print $_  foreach ( @MapLoc );
+       print "\n";
+       CHECK_MAP();
+       TRAVEL_DIR();
     }
 }
 
