@@ -130,11 +130,11 @@ sub TRAVEL_DIR {
     elsif ($input =~ 'E') {
         print "You travelled East\n";
 	$count_EW += 1;
-	if ($MapLoc[0] >= 4 && @{$MapAoA[2]} != 2) {
+	if ($MapLoc[0] >= 4 && @{$MapAoA[2]}->[2] != 2) {
 	    splice @MapLoc,0,1,4;
 	    $count_EW -= 1;
 	}
-	elsif (@{$MapAoA[2]} == 2) {
+	elsif (@{$MapAoA[2]}->[2] == 2) {
 	    splice @MapLoc,0,1,$MapLoc[2];
 	    $count_EW -= 1;
 	}
@@ -148,11 +148,12 @@ sub TRAVEL_DIR {
         print "You travelled West\n";
 	$count_EW -= 1;
 
-	if ($MapLoc[0] <= 0) {
+	if ($MapLoc[0] <= 0 && @{$MapAoA[2]}->[2] != 2) {
 	    splice @MapLoc,0,1,0;
 	    $count_EW += 1;
 	}
-	elsif (@{$MapAoA[2]} == 2) {
+	# If current X and Y are equal to a tile with the state of "impasse", move them back whence they came
+	elsif ($MapLoc[0] == && $MapLoc[1] == ) {
 	    $count_EW += 1;
 	    splice @MapLoc,0,1,$count_EW;
 	}
@@ -168,6 +169,7 @@ sub DO_SOMETHING {
    # Script to destroy the impasse at 0,1 
    if ($MapLoc[0] == 2 && $MapLoc[1] == 0 && $impasse01_cleared == 0) {
       print "\nYou see a crack in the wall. As you investigate you realize you have a bomb to deal with this certain thing!\n";
+      
       print "Use bomb? [Yy]\n=>";
       my $input = uc(<STDIN>);
       chomp($input);
