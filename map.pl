@@ -16,11 +16,12 @@ my $is_shop = 0;
 my $has_bomb = 0;
 my $impasse01_cleared = 0;
 my $impasse11_cleared = 0;
+my $mcount = 0;
 
 system("clear"); 
 
-#Location on the grid = current X[0], current Y[1], previous X[2], previous Y[3]
-my @MapLoc = (0,0,0,0);
+#Location on the grid = current X[0], current Y[1], previous X[2], previous Y[3], AoAIndexCount[4]
+my @MapLoc = (0,0,0,0,0);
 
 # data structure: X[0], Y[1], state[2], boss[3], exit N[4], exit S[5], exit E[6], exit W[7]
 #states will be 0=undiscovered,1=discovered,2=impasse,3=shop
@@ -37,7 +38,7 @@ my @MapAoA = ( [0,0,1,0,0,1,0,0], #[0] array.
 	       [0,2,0,0,0,1,1,0], #[10]
 	       [1,2,0,0,1,0,1,0], #[11]
 	       [2,2,0,0,0,0,1,1], #[12]
-	       [3,2,0,0,0,1,0,0], #[13]
+	       [3,2,2,0,0,1,0,0], #[13]
 	       [4,2,0,0,1,0,1,0], #[14]
 	       [0,3,0,0,0,0,1,1], #[15]
 	       [1,3,0,0,0,1,0,1], #[16]
@@ -87,83 +88,114 @@ sub CHECK_MAP {
 }
 
 
+
+
 sub TRAVEL_DIR {
     print "Which direction do you choose to travel? [NESW]\n=> ";
     my $input = uc(<STDIN>);
     chomp($input);
 
-    # @MapLock is (X,Y,X,Y) current X[0], current Y[1], previous X[2], previous Y[3]
     if ($input =~ 'N') { 
         print "You travelled North\n";
-	$count_NS -= 1;
-	if ($MapLoc[1] <= 0) { 
-	    splice @MapLoc,1,1,0;
-	    $count_NS += 1;
-	}
-	elsif (@{$MapAoA[2]} == 2) {
-	    splice @MapLoc,1,1,$count_NS;
-	    $count_NS += 1;
-	}
-	else {
-	    splice @MapLoc,3,1,$count_NS+1; # Previous
-	    splice @MapLoc,1,1,$count_NS; #Current
-	}
+		$count_NS -= 1;
+		# Sets a value so we can know what index we're in in the MapAoA structure
+		splice @MapLoc,4,1,$MapLoc[4]-5;
+		# Doesn't allow you to leave the map boundaries
+		if ($MapLoc[1] <= 0 && @{$MapAoA[$MapLoc[4]]}->[2] != 2) { 
+			splice @MapLoc,1,1,0;
+			$count_NS += 1;
+			splice @MapLoc,4,1,$MapLoc[4]+5;
+		}
+		# Takes care of running into an "impasse" and resets your location to the previous location 
+		elsif ($MapLoc[1] >= 0 && @{$MapAoA[$MapLoc[4]]}->[2] == 2) {
+			splice @MapLoc,1,1,$MapLoc[3];
+			$count_NS += 1;
+			splice @MapLoc,1,1,$MapLoc[4]-5;
+		}
+		# Allows movement if within the map boundaries		
+		else {
+			splice @MapLoc,3,1,$count_NS+1; # Previous
+			splice @MapLoc,1,1,$count_NS; #Current
+		}
     }
 
     elsif ($input =~ 'S') { 
         print "You travelled South\n";
-	$count_NS += 1;
-	if ($MapLoc[1] >= 4) {
-	    splice @MapLoc,1,1,4;
-	    $count_NS -= 1;
-	}
-	elsif (@{$MapAoA[2]} == 2) { 
-	    splice @MapLoc,1,1,$count_NS;
-	    $count_NS -= 1;
-	}
-	else {
-	    splice @MapLoc,3,1,$count_NS-1; # Previous
-	    splice @MapLoc,1,1,$count_NS; # Current
-	}
+		$count_NS += 1;
+		# Sets a value so we can know what index we're in in the MapAoA structure
+		splice @MapLoc,4,1,$MapLoc[4]+5;
+		# Doesn't allow you to leave the map boundaries
+		if ($MapLoc[1] >= 4 && @{$MapAoA[$MapLoc[4]]}->[2] != 2) {
+			splice @MapLoc,1,1,4;
+			$count_NS -= 1;
+			splice @MapLoc,4,1,$MapLoc[4]-5;
+		}
+		# Takes care of running into an "impasse" and resets your location to the previous location 
+		elsif ($MapLoc[1] <= 4 && @{$MapAoA[$MapLoc[4]]}->[2] == 2) { 
+			splice @MapLoc,1,1,$MapLoc[3];
+			$count_NS -= 1;
+			splice @MapLoc,1,1,$MapLoc[4]+5;
+		}
+		# Allows movement if within the map boundaries		
+		else {
+			splice @MapLoc,3,1,$count_NS-1; # Previous
+			splice @MapLoc,1,1,$count_NS; # Current
+		}
     }
 
     elsif ($input =~ 'E') {
         print "You travelled East\n";
-	$count_EW += 1;
-	if ($MapLoc[0] >= 4 && @{$MapAoA[2]}->[2] != 2) {
-	    splice @MapLoc,0,1,4;
-	    $count_EW -= 1;
-	}
-	elsif (@{$MapAoA[2]}->[2] == 2) {
-	    splice @MapLoc,0,1,$MapLoc[2];
-	    $count_EW -= 1;
-	}
-	else {
-	    splice @MapLoc,2,1,$count_EW-1; # Previous 
-	    splice @MapLoc,0,1,$count_EW; # Current
-	}
+		$count_EW += 1;
+		# Sets a value so we can know what index we're in in the MapAoA structure
+		splice @MapLoc,4,1,$MapLoc[4]+1;
+		# Doesn't allow you to leave the map boundaries
+		if ($MapLoc[0] >= 4 && @{$MapAoA[$MapLoc[4]]}->[2] != 2) {
+			$count_EW -= 1;
+			splice @MapLoc,0,1,4;
+			splice @MapLoc,4,1,$MapLoc[4]-1;
+		}
+		# Takes care of running into an "impasse" and resets your location to the previous location 
+		elsif ($MapLoc[0] <= 4 && @{$MapAoA[$MapLoc[4]]}->[2] == 2) {
+			$count_EW -= 1;
+			splice @MapLoc,0,1,$count_EW; # Moves your position to the previous location
+			splice @MapLoc,4,1,$MapLoc[4]-1; # Changes the MapAoA index so we know which cell we're in
+		}
+		# Allows movement if within the map boundaries		
+		else {
+			splice @MapLoc,2,1,$count_EW-1; # Previous 
+			splice @MapLoc,0,1,$count_EW; # Current
+		}
     }
 
     elsif ($input =~ 'W') {
         print "You travelled West\n";
-	$count_EW -= 1;
-
-	if ($MapLoc[0] <= 0 && @{$MapAoA[2]}->[2] != 2) {
-	    splice @MapLoc,0,1,0;
-	    $count_EW += 1;
-	}
-	# If current X and Y are equal to a tile with the state of "impasse", move them back whence they came
-	elsif ($MapLoc[0] == && $MapLoc[1] == ) {
-	    $count_EW += 1;
-	    splice @MapLoc,0,1,$count_EW;
-	}
-	else {
-	    splice @MapLoc,2,1,$count_EW+1; # Previous
-	    splice @MapLoc,0,1,$count_EW; # Current
-	}
+		$count_EW -= 1;
+		# Sets a value so we can know what index we're in in the MapAoA structure
+		splice @MapLoc,4,1,$MapLoc[4]-1;
+		# Doesn't allow you to leave the map boundaries
+		if ($MapLoc[0] <= 0 && @{$MapAoA[$MapLoc[4]]}->[2] != 2) {
+			$count_EW += 1;
+			splice @MapLoc,0,1,0;
+			splice @MapLoc,4,1,$MapLoc[4]+1;
+		}
+		# Takes care of running into an "impasse" and resets your location to the previous location 
+		elsif ( $MapLoc[0] >= 0 && @{$MapAoA[$MapLoc[4]]}->[2] == 2) {
+			$count_EW += 1;
+			splice @MapLoc,0,1,$count_EW; # Moves your position to the previous location
+			splice @MapLoc,4,1,$MapLoc[4]+1; # Changes the MapAoA index so we know which cell we're in
+		}
+		# Allows movement if within the map boundaries	
+		else {
+			splice @MapLoc,2,1,$count_EW+1; # Previous
+			splice @MapLoc,0,1,$count_EW; # Current
+		}
     }
+	
     CHECK_MAP();
 }
+
+
+
 
 sub DO_SOMETHING {
    # Script to destroy the impasse at 0,1 
@@ -192,20 +224,20 @@ sub DO_SOMETHING {
 }
 
 
+
 sub main {
     while(1) {
        system("clear");
 
        # Debug data structure stuff
 #       print @$_, "\n" foreach ( @MapAoA );
-#       print "0123\n";
-#       print "XYXY\n";
-#       print "CCPP\n";
-       print $_  foreach ( @MapLoc );
-       print "\n";
-       CHECK_MAP();
-       TRAVEL_DIR();
-       DO_SOMETHING();
+	print "EW: ".$count_EW." NS: ".$count_NS."\n";
+        print "X Y X Y ?\n";
+        print $_." " foreach ( @MapLoc );
+        print "\n";
+        CHECK_MAP();
+        TRAVEL_DIR();
+        DO_SOMETHING();
     }
 }
 
