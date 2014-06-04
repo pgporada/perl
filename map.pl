@@ -246,7 +246,7 @@ sub DO_SOMETHING {
        chomp($input);
        $impasse01_cleared = 1;
        CHECK_MAP();
-       system("/usr/bin/afplay /Users/phil/LOZ_Secret.wav &");
+       system("/usr/bin/afplay LOZ_Secret.wav &");
        splice @{$MapAoA[$MapLoc[4]]},7,1,1;
     }
 
@@ -258,7 +258,7 @@ sub DO_SOMETHING {
        chomp($input);
        $impasse11_cleared = 1;
        CHECK_MAP();
-       system("/usr/bin/afplay /Users/phil/OOT_Secret.wav &");
+       system("/usr/bin/afplay OOT_Secret.wav &");
        splice @{$MapAoA[$MapLoc[4]]},5,1,1;
     }
 }
