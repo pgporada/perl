@@ -1,7 +1,6 @@
 #!/usr/bin/perl
 # WHO:   PGP
 # WHAT:  This script will check if the string you input is a palindrome.
-
 use strict;
 use warnings;
 use POSIX qw/ceil/;
@@ -10,27 +9,29 @@ use feature 'say';
 usage() if (@ARGV < 1 || @ARGV == 0);
 sub usage {
     say "Usage:";
-    say "Enter a string as your argument";
+    say "Enter a string as your first and only argument";
     exit;
 }
 
-# Take the first argument as the input
+sub check_palindrome {
+    my $uarg = shift;
+    my @chararray = split //, $uarg;
+
+    # Get scalar value of array
+    my $size = @chararray;
+
+    # Divide the number and round up to find where our search should stop
+    my $half = ceil(@chararray / 2);
+
+    for (my $i=0; $i < $half; $i++) {
+        if (lc($chararray[$i]) ne lc($chararray[-$i-1]) ) {
+            say "Your string ==> '$uarg' <== is NOT a palindrome :(";
+            exit;
+        }
+    }
+    say "Your string ==> '$uarg' <== is a palindrome! :)";
+}
+
 my $arg = $ARGV[0];
 chomp $arg;
-my @chararray = split //, $arg;
-
-# Get scalar value of array
-my $size = @chararray;
-say $size;
-
-# Divide the number and round up to find what index-1 our search should stop
-my $half = ceil(@chararray / 2);
-say $half;
-
-for (my $i=0; $i < $half; $i++) {
-    if (lc($chararray[$i]) ne lc($chararray[-$i-1]) ) {
-        say "Your string ==> '$arg' <== is NOT a palindrome :(";
-        exit;
-    }
-}
-say "Your string ==> '$arg' <== is a palindrome! :)";
+check_palindrome($arg)
