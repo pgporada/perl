@@ -1,7 +1,6 @@
 #!/usr/bin/perl
 # WHO:   PGP
 # WHAT:  This script will check if the string you input is a palindrome.
-# WHERE: Used in an interview for Tome Software
 
 use strict;
 use warnings;
