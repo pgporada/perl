@@ -6,16 +6,18 @@ use warnings;
 use POSIX qw/ceil/;
 use feature 'say';
 
-usage() if (@ARGV < 1 || @ARGV > 1);
+usage() if (@ARGV < 1);
 sub usage {
     say "Usage:";
-    say "Enter a string as your first and only argument";
+    say "Enter a string as your argument";
+    say "Example:";
+    say "$0 \"taco cat\"";
     exit;
 }
 
 sub check_palindrome {
     my $uarg = shift;
-    my @chararray = split //, $uarg;
+    my @chararray = join ' ',split //, $uarg;
 
     # Get scalar value of array
     my $size = @chararray;
