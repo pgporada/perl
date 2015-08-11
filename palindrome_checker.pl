@@ -6,7 +6,7 @@ use warnings;
 use POSIX qw/ceil/;
 use feature 'say';
 
-usage() if (@ARGV < 1 || @ARGV == 0);
+usage() if (@ARGV < 1 || @ARGV > 1);
 sub usage {
     say "Usage:";
     say "Enter a string as your first and only argument";
